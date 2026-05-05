@@ -16,8 +16,21 @@ topic() {
 	echo "-----> $*"
 }
 
+# Swap APT mirror to Azure's CDN-backed mirror.
+# archive.ubuntu.com is occasionally severely degraded (DDoS, slow regional POPs),
+# which can stall review-app builds for hours. azure.archive.ubuntu.com is
+# Microsoft Azure CDN-fronted and far more reliable from US Heroku build dynos.
+swap_apt_mirror() {
+	if [ -w /etc/apt/sources.list ]; then
+		sed -i 's|archive\.ubuntu\.com|azure.archive.ubuntu.com|g; s|security\.ubuntu\.com|azure.archive.ubuntu.com|g' /etc/apt/sources.list
+		topic "Swapped APT mirror to azure.archive.ubuntu.com"
+	fi
+}
+
 install_system_deps() {
 	topic "Installing System Dependencies"
+
+	swap_apt_mirror
 
 	APT_BUILDPACK="https://github.com/heroku/heroku-buildpack-apt"
 	local buildpack_tmpdir=$(mktemp -d)
